@@ -1,0 +1,12 @@
+# Airflow secrets and generated files
+airflow/.env
+airflow/logs/
+airflow/**/__pycache__/
+airflow/**/*.pyc
+
+# Local configuration
+airflow/config/airflow.cfg
+
+# Python cache
+__pycache__/
+*.pyc
