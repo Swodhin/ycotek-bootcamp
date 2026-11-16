@@ -1,0 +1,11 @@
+object_name,layer,format,partitioning,load_pattern
+DIM_SUBCLASS,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Full refresh
+DIM_ITEM,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Target: SCD Type 2 incremental upsert; current SQL: full refresh/current-state extract
+DIM_DISTRICT,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Full refresh
+DIM_LOCN,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Target: SCD Type 2 incremental upsert; current SQL: full refresh/current-state extract
+DIM_DAY,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Seed/extend calendar; validate date continuity and fiscal attributes
+DIM_CUSTOMER,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Not populated; load only when a trusted customer source is available
+FCT_SALES,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Target: incremental date-scoped load/reload; current SQL: full refresh
+FCT_INVENTORY,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Target: snapshot-date-scoped load/reload; current SQL: full refresh
+FCT_PRICE,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Target: incremental price-event/range load; current SQL: full refresh
+AGG_DAILY_ITEM_SALES,GOLD,Snowflake managed table,Snowflake micro-partitions; no manual partitioning,Target: recompute affected date partitions; current SQL: full refresh
