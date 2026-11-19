@@ -1,0 +1,226 @@
+{
+  "snowflake_connection_id": "snowflake_conn",
+  "filesystem_connection_id": "fs_default",
+
+  "database": "RETAIL_DW",
+  "bronze_schema": "BRONZE_3",
+  "silver_schema": "SILVER_3",
+  "gold_schema": "GOLD_3",
+
+  "data_directory": "/opt/airflow/assignment-2.3/data",
+  "sql_directory": "/opt/airflow/assignment-2.3/include/sql",
+
+  "stage": "RETAIL_DW.BRONZE_3.RETAIL_STAGE",
+  "file_format": "RETAIL_DW.BRONZE_3.CSV_FORMAT",
+
+  "sensors": {
+    "poke_interval": 30,
+    "timeout": 600
+  },
+
+  "files": [
+    {
+      "file": "item_master_20261001.csv",
+      "folder": "item_master",
+      "table": "ITEM_MASTER_RAW",
+      "stage_folder": "ITEM_MASTER",
+      "columns": [
+        "ITEM_ID", "ITEM_PARENT", "ITEM_LEVEL",
+        "DEPT_ID", "CLASS_ID", "SUBCLASS_ID"
+      ]
+    },
+    {
+      "file": "item_master_20261002.csv",
+      "folder": "item_master",
+      "table": "ITEM_MASTER_RAW",
+      "stage_folder": "ITEM_MASTER",
+      "columns": [
+        "ITEM_ID", "ITEM_PARENT", "ITEM_LEVEL",
+        "DEPT_ID", "CLASS_ID", "SUBCLASS_ID"
+      ]
+    },
+    {
+      "file": "item_master_20261003.csv",
+      "folder": "item_master",
+      "table": "ITEM_MASTER_RAW",
+      "stage_folder": "ITEM_MASTER",
+      "columns": [
+        "ITEM_ID", "ITEM_PARENT", "ITEM_LEVEL",
+        "DEPT_ID", "CLASS_ID", "SUBCLASS_ID"
+      ]
+    },
+    {
+      "file": "item_master_20261004.csv",
+      "folder": "item_master",
+      "table": "ITEM_MASTER_RAW",
+      "stage_folder": "ITEM_MASTER",
+      "columns": [
+        "ITEM_ID", "ITEM_PARENT", "ITEM_LEVEL",
+        "DEPT_ID", "CLASS_ID", "SUBCLASS_ID"
+      ]
+    },
+    {
+      "file": "item_master_20261005.csv",
+      "folder": "item_master",
+      "table": "ITEM_MASTER_RAW",
+      "stage_folder": "ITEM_MASTER",
+      "columns": [
+        "ITEM_ID", "ITEM_PARENT", "ITEM_LEVEL",
+        "DEPT_ID", "CLASS_ID", "SUBCLASS_ID"
+      ]
+    },
+
+    {
+      "file": "store_master_20260924.csv",
+      "folder": "store_master",
+      "table": "STORE_MASTER_RAW",
+      "stage_folder": "STORE_MASTER",
+      "columns": [
+        "STORE_ID", "STORE_NAME", "STORE_NAME10", "STORE_TYPE",
+        "DISTRICT_ID", "CHANNEL_ID", "CURRENCY_CODE",
+        "STORE_OPEN_DATE", "STORE_CLOSE_DATE", "COUNTRY",
+        "STATE", "CITY", "POSTAL_CODE", "TOTAL_SQUARE_FT",
+        "COMP_FLAG"
+      ]
+    },
+    {
+      "file": "store_master_20261001.csv",
+      "folder": "store_master",
+      "table": "STORE_MASTER_RAW",
+      "stage_folder": "STORE_MASTER",
+      "columns": [
+        "STORE_ID", "STORE_NAME", "STORE_NAME10", "STORE_TYPE",
+        "DISTRICT_ID", "CHANNEL_ID", "CURRENCY_CODE",
+        "STORE_OPEN_DATE", "STORE_CLOSE_DATE", "COUNTRY",
+        "STATE", "CITY", "POSTAL_CODE", "TOTAL_SQUARE_FT",
+        "COMP_FLAG"
+      ]
+    },
+    {
+      "file": "store_region_mapping.csv",
+      "folder": "store_master",
+      "table": "STORE_REGION_MAPPING_RAW",
+      "stage_folder": "STORE_REGION_MAPPING",
+      "columns": [
+        "STORE_ID", "STORE_CODE", "REGION_NAME", "DISTRICT_NAME"
+      ]
+    },
+
+    {
+      "file": "pos_sales_20261001.csv",
+      "folder": "pos_sales",
+      "table": "POS_SALES_RAW",
+      "stage_folder": "POS_SALES",
+      "columns": [
+        "LOCATION_ID", "WORKSTATION_ID", "TRANSACTION_SEQUENCE",
+        "LINE_SEQUENCE", "BUSINESS_DATE", "BEGIN_DATETIME",
+        "TRANSACTION_TYPE", "ITEM_ID", "ITEM_SCAN_ID", "QUANTITY",
+        "UNIT_PRICE", "EXTENDED_AMOUNT", "DISCOUNT_AMOUNT",
+        "TAX_AMOUNT", "NET_AMOUNT", "CURRENCY", "CASHIER_ID"
+      ]
+    },
+    {
+      "file": "pos_sales_20261002.csv",
+      "folder": "pos_sales",
+      "table": "POS_SALES_RAW",
+      "stage_folder": "POS_SALES",
+      "columns": [
+        "LOCATION_ID", "WORKSTATION_ID", "TRANSACTION_SEQUENCE",
+        "LINE_SEQUENCE", "BUSINESS_DATE", "BEGIN_DATETIME",
+        "TRANSACTION_TYPE", "ITEM_ID", "ITEM_SCAN_ID", "QUANTITY",
+        "UNIT_PRICE", "EXTENDED_AMOUNT", "DISCOUNT_AMOUNT",
+        "TAX_AMOUNT", "NET_AMOUNT", "CURRENCY", "CASHIER_ID"
+      ]
+    },
+    {
+      "file": "pos_sales_20261003.csv",
+      "folder": "pos_sales",
+      "table": "POS_SALES_RAW",
+      "stage_folder": "POS_SALES",
+      "columns": [
+        "LOCATION_ID", "WORKSTATION_ID", "TRANSACTION_SEQUENCE",
+        "LINE_SEQUENCE", "BUSINESS_DATE", "BEGIN_DATETIME",
+        "TRANSACTION_TYPE", "ITEM_ID", "ITEM_SCAN_ID", "QUANTITY",
+        "UNIT_PRICE", "EXTENDED_AMOUNT", "DISCOUNT_AMOUNT",
+        "TAX_AMOUNT", "NET_AMOUNT", "CURRENCY", "CASHIER_ID"
+      ]
+    },
+    {
+      "file": "pos_sales_20261004.csv",
+      "folder": "pos_sales",
+      "table": "POS_SALES_RAW",
+      "stage_folder": "POS_SALES",
+      "columns": [
+        "LOCATION_ID", "WORKSTATION_ID", "TRANSACTION_SEQUENCE",
+        "LINE_SEQUENCE", "BUSINESS_DATE", "BEGIN_DATETIME",
+        "TRANSACTION_TYPE", "ITEM_ID", "ITEM_SCAN_ID", "QUANTITY",
+        "UNIT_PRICE", "EXTENDED_AMOUNT", "DISCOUNT_AMOUNT",
+        "TAX_AMOUNT", "NET_AMOUNT", "CURRENCY", "CASHIER_ID"
+      ]
+    },
+    {
+      "file": "pos_sales_20261005.csv",
+      "folder": "pos_sales",
+      "table": "POS_SALES_RAW",
+      "stage_folder": "POS_SALES",
+      "columns": [
+        "LOCATION_ID", "WORKSTATION_ID", "TRANSACTION_SEQUENCE",
+        "LINE_SEQUENCE", "BUSINESS_DATE", "BEGIN_DATETIME",
+        "TRANSACTION_TYPE", "ITEM_ID", "ITEM_SCAN_ID", "QUANTITY",
+        "UNIT_PRICE", "EXTENDED_AMOUNT", "DISCOUNT_AMOUNT",
+        "TAX_AMOUNT", "NET_AMOUNT", "CURRENCY", "CASHIER_ID"
+      ]
+    },
+
+    {
+      "file": "inventory_snapshot_20261001.csv",
+      "folder": "inventory_snapshot",
+      "table": "INVENTORY_SNAPSHOT_RAW",
+      "stage_folder": "INVENTORY_SNAPSHOT",
+      "columns": [
+        "ITEM_ID", "LOCATION_ID", "LOCATION_TYPE",
+        "SNAPSHOT_DATE", "STOCK_ON_HAND"
+      ]
+    },
+    {
+      "file": "inventory_snapshot_20261002.csv",
+      "folder": "inventory_snapshot",
+      "table": "INVENTORY_SNAPSHOT_RAW",
+      "stage_folder": "INVENTORY_SNAPSHOT",
+      "columns": [
+        "ITEM_ID", "LOCATION_ID", "LOCATION_TYPE",
+        "SNAPSHOT_DATE", "STOCK_ON_HAND"
+      ]
+    },
+    {
+      "file": "inventory_snapshot_20261003.csv",
+      "folder": "inventory_snapshot",
+      "table": "INVENTORY_SNAPSHOT_RAW",
+      "stage_folder": "INVENTORY_SNAPSHOT",
+      "columns": [
+        "ITEM_ID", "LOCATION_ID", "LOCATION_TYPE",
+        "SNAPSHOT_DATE", "STOCK_ON_HAND"
+      ]
+    },
+    {
+      "file": "inventory_snapshot_20261004.csv",
+      "folder": "inventory_snapshot",
+      "table": "INVENTORY_SNAPSHOT_RAW",
+      "stage_folder": "INVENTORY_SNAPSHOT",
+      "columns": [
+        "ITEM_ID", "LOCATION_ID", "LOCATION_TYPE",
+        "SNAPSHOT_DATE", "STOCK_ON_HAND"
+      ]
+    },
+    {
+      "file": "inventory_snapshot_20261005.csv",
+      "folder": "inventory_snapshot",
+      "table": "INVENTORY_SNAPSHOT_RAW",
+      "stage_folder": "INVENTORY_SNAPSHOT",
+      "columns": [
+        "ITEM_ID", "LOCATION_ID", "LOCATION_TYPE",
+        "SNAPSHOT_DATE", "STOCK_ON_HAND"
+      ]
+    }
+  ]
+}

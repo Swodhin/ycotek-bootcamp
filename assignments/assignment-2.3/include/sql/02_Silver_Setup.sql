@@ -1,0 +1,135 @@
+
+-- ============================================================
+-- ASSIGNMENT 2.3: SILVER LAYER SETUP
+-- Creates clean tables and quarantine table.
+-- ============================================================
+
+USE DATABASE RETAIL_DW;
+
+CREATE SCHEMA IF NOT EXISTS SILVER_3;
+
+-- ============================================================
+-- 1. ITEM MASTER CLEAN
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS SILVER_3.ITEM_MASTER_CLEAN (
+    ITEM_ID VARCHAR,
+    ITEM_PARENT VARCHAR,
+    ITEM_LEVEL NUMBER,
+    DEPT_ID VARCHAR,
+    CLASS_ID VARCHAR,
+    SUBCLASS_ID VARCHAR,
+    SNAPSHOT_DATE DATE,
+    SOURCE_FILE VARCHAR,
+    SOURCE_ROW_NUMBER NUMBER,
+    INGESTED_AT TIMESTAMP_NTZ
+);
+
+-- Support older table definitions.
+ALTER TABLE SILVER_3.ITEM_MASTER_CLEAN
+    ADD COLUMN IF NOT EXISTS SNAPSHOT_DATE DATE;
+
+
+-- ============================================================
+-- 2. STORE MASTER CLEAN
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS SILVER_3.STORE_MASTER_CLEAN (
+    STORE_ID NUMBER,
+    STORE_NAME VARCHAR,
+    STORE_NAME10 VARCHAR,
+    STORE_TYPE VARCHAR,
+    DISTRICT_ID VARCHAR,
+    CHANNEL_ID VARCHAR,
+    CURRENCY_CODE VARCHAR,
+    STORE_OPEN_DATE DATE,
+    STORE_CLOSE_DATE DATE,
+    COUNTRY VARCHAR,
+    STATE VARCHAR,
+    CITY VARCHAR,
+    POSTAL_CODE VARCHAR,
+    TOTAL_SQUARE_FT NUMBER,
+    COMP_FLAG VARCHAR,
+    SNAPSHOT_DATE DATE,
+    SOURCE_FILE VARCHAR,
+    SOURCE_ROW_NUMBER NUMBER,
+    INGESTED_AT TIMESTAMP_NTZ
+);
+
+ALTER TABLE SILVER_3.STORE_MASTER_CLEAN
+    ADD COLUMN IF NOT EXISTS SNAPSHOT_DATE DATE;
+
+
+-- ============================================================
+-- 3. STORE REGION MAPPING CLEAN
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS SILVER_3.STORE_REGION_MAPPING_CLEAN (
+    STORE_ID NUMBER,
+    STORE_CODE VARCHAR,
+    REGION_NAME VARCHAR,
+    DISTRICT_NAME VARCHAR,
+    SOURCE_FILE VARCHAR,
+    SOURCE_ROW_NUMBER NUMBER,
+    INGESTED_AT TIMESTAMP_NTZ
+);
+
+
+-- ============================================================
+-- 4. POS SALES CLEAN
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS SILVER_3.POS_SALES_CLEAN (
+    LOCATION_ID NUMBER,
+    WORKSTATION_ID NUMBER,
+    TRANSACTION_SEQUENCE NUMBER,
+    LINE_SEQUENCE NUMBER,
+    BUSINESS_DATE DATE,
+    BEGIN_DATETIME TIMESTAMP_NTZ,
+    TRANSACTION_TYPE VARCHAR,
+    ITEM_ID VARCHAR,
+    ITEM_SCAN_ID VARCHAR,
+    QUANTITY NUMBER(18,3),
+    UNIT_PRICE NUMBER(18,2),
+    EXTENDED_AMOUNT NUMBER(18,2),
+    DISCOUNT_AMOUNT NUMBER(18,2),
+    TAX_AMOUNT NUMBER(18,2),
+    NET_AMOUNT NUMBER(18,2),
+    CURRENCY VARCHAR,
+    CASHIER_ID VARCHAR,
+    SOURCE_FILE VARCHAR,
+    SOURCE_ROW_NUMBER NUMBER,
+    INGESTED_AT TIMESTAMP_NTZ
+);
+
+
+-- ============================================================
+-- 5. INVENTORY SNAPSHOT CLEAN
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS SILVER_3.INVENTORY_SNAPSHOT_CLEAN (
+    ITEM_ID VARCHAR,
+    LOCATION_ID NUMBER,
+    LOCATION_TYPE VARCHAR,
+    SNAPSHOT_DATE DATE,
+    STOCK_ON_HAND NUMBER(18,3),
+    SOURCE_FILE VARCHAR,
+    SOURCE_ROW_NUMBER NUMBER,
+    INGESTED_AT TIMESTAMP_NTZ
+);
+
+
+-- ============================================================
+-- 6. QUARANTINE RECORDS
+-- Stores rejected and duplicate source records.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS SILVER_3.QUARANTINE_RECORDS (
+    QUARANTINE_ID NUMBER AUTOINCREMENT START 1 INCREMENT 1,
+    DATASET_NAME VARCHAR,
+    SOURCE_FILE VARCHAR,
+    SOURCE_ROW_NUMBER NUMBER,
+    REASON VARCHAR,
+    RECORD_DATA VARIANT,
+    QUARANTINED_AT TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+);
