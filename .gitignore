@@ -3,10 +3,17 @@ airflow/.env
 airflow/logs/
 airflow/**/__pycache__/
 airflow/**/*.pyc
-
+assignments/assignment-2.3/.env
 # Local configuration
 airflow/config/airflow.cfg
 
 # Python cache
 __pycache__/
 *.pyc
+
+# Assignment 2.3 generated files
+assignments/assignment-2.3/**/__pycache__/
+assignments/assignment-2.3/**/*.pyc
+assignments/assignment-2.3/.pytest_cache/
+assignments/assignment-2.3/.venv/
+assignments/assignment-2.3/venv/
