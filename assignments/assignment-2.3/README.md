@@ -115,10 +115,29 @@ The pipeline was executed more than once to verify that rerunning the same data 
 
 ## 10. Automated Testing
 
-The following automated tests were executed successfully using Pytest:
+The project includes six automated tests implemented using Pytest.
 
-- DAG loads without import errors.
-- DAG contains no dependency cycles.
-- All tasks have retry configurations.
+### Test Coverage
 
-All three tests passed.
+1. **DAG Parsing:** Verifies that the DAG loads without import errors.
+2. **DAG Dependencies:** Verifies the expected task execution dependencies.
+3. **DAG Cycles:** Ensures that the DAG contains no dependency cycles.
+4. **Task Retries:** Verifies that tasks have retry configurations.
+5. **Bronze Rerun:** Verifies that existing records are deleted before forced re-ingestion, preventing duplicate records during reruns.
+6. **Silver Data Quality:** Checks that the SQL contains the expected validation, quarantine, and duplicate-handling rules.
+
+### Running the Tests
+
+Execute the following command from the Airflow directory:
+
+```bash
+docker compose exec airflow-worker python -m pytest /opt/airflow/assignment-2.3/tests -v
+```
+
+### Test Results
+
+All six automated tests passed successfully.
+
+**Result: 6 passed, 0 failed.**
+
+Screenshots of the successful test executions are available in the `evidence/` folder.
