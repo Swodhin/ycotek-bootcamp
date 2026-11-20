@@ -2,53 +2,75 @@
 -- ============================================================
 -- ASSIGNMENT 2.3: SILVER LAYER TRANSFORMATIONS
 -- Database: RETAIL_DW
+-- Date-based processing using Airflow {{RUN_DATE}}
 -- ============================================================
 
 USE DATABASE RETAIL_DW;
 
+
 -- ============================================================
 -- 0. REMOVE PREVIOUSLY PROCESSED SOURCE ROWS
--- Reprocess Bronze data safely without truncating all history.
--- Bronze retains the source files, allowing all snapshots
--- to be rebuilt consistently on every run.
+-- Delete only records belonging to the current processing date.
 -- ============================================================
 
+-- ITEM MASTER: current date only
 DELETE FROM SILVER_3.ITEM_MASTER_CLEAN
-WHERE SOURCE_FILE IN (
-    SELECT DISTINCT SOURCE_FILE FROM BRONZE_3.ITEM_MASTER_RAW
-);
+WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}';
 
+-- STORE MASTER: current date + September baseline on October 1
 DELETE FROM SILVER_3.STORE_MASTER_CLEAN
-WHERE SOURCE_FILE IN (
-    SELECT DISTINCT SOURCE_FILE FROM BRONZE_3.STORE_MASTER_RAW
-);
+WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+   OR (
+       '{{RUN_DATE}}' = '20261001'
+       AND SOURCE_FILE = 'store_master_20260924.csv'
+   );
 
+-- POS SALES: current date only
 DELETE FROM SILVER_3.POS_SALES_CLEAN
-WHERE SOURCE_FILE IN (
-    SELECT DISTINCT SOURCE_FILE FROM BRONZE_3.POS_SALES_RAW
-);
+WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}';
 
+-- INVENTORY: current date only
 DELETE FROM SILVER_3.INVENTORY_SNAPSHOT_CLEAN
-WHERE SOURCE_FILE IN (
-    SELECT DISTINCT SOURCE_FILE FROM BRONZE_3.INVENTORY_SNAPSHOT_RAW
-);
+WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}';
 
+-- REGION MAPPING: shared file, reprocess each run
 DELETE FROM SILVER_3.STORE_REGION_MAPPING_CLEAN
-WHERE SOURCE_FILE IN (
-    SELECT DISTINCT SOURCE_FILE FROM BRONZE_3.STORE_REGION_MAPPING_RAW
-);
+WHERE SOURCE_FILE = 'store_region_mapping.csv';
 
+-- QUARANTINE: remove records belonging to files being reprocessed
 DELETE FROM SILVER_3.QUARANTINE_RECORDS
 WHERE SOURCE_FILE IN (
-    SELECT SOURCE_FILE FROM BRONZE_3.ITEM_MASTER_RAW
+    SELECT SOURCE_FILE
+    FROM BRONZE_3.ITEM_MASTER_RAW
+    WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+
     UNION
-    SELECT SOURCE_FILE FROM BRONZE_3.STORE_MASTER_RAW
+
+    SELECT SOURCE_FILE
+    FROM BRONZE_3.STORE_MASTER_RAW
+    WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+       OR (
+           '{{RUN_DATE}}' = '20261001'
+           AND SOURCE_FILE = 'store_master_20260924.csv'
+       )
+
     UNION
-    SELECT SOURCE_FILE FROM BRONZE_3.POS_SALES_RAW
+
+    SELECT SOURCE_FILE
+    FROM BRONZE_3.POS_SALES_RAW
+    WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+
     UNION
-    SELECT SOURCE_FILE FROM BRONZE_3.INVENTORY_SNAPSHOT_RAW
+
+    SELECT SOURCE_FILE
+    FROM BRONZE_3.INVENTORY_SNAPSHOT_RAW
+    WHERE REGEXP_SUBSTR(SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+
     UNION
-    SELECT SOURCE_FILE FROM BRONZE_3.STORE_REGION_MAPPING_RAW
+
+    SELECT SOURCE_FILE
+    FROM BRONZE_3.STORE_REGION_MAPPING_RAW
+    WHERE SOURCE_FILE = 'store_region_mapping.csv'
 );
 
 
@@ -57,6 +79,8 @@ WHERE SOURCE_FILE IN (
 -- Preserve one item per snapshot date.
 -- Quarantine missing IDs and deduplicate records.
 -- ============================================================
+
+-- 1.1 Quarantine missing item IDs
 
 INSERT INTO SILVER_3.QUARANTINE_RECORDS (
     DATASET_NAME, SOURCE_FILE, SOURCE_ROW_NUMBER,
@@ -69,8 +93,11 @@ SELECT
     'Missing item ID',
     OBJECT_CONSTRUCT_KEEP_NULL(R.*)
 FROM BRONZE_3.ITEM_MASTER_RAW R
-WHERE R.ITEM_ID IS NULL
-   OR TRIM(R.ITEM_ID) = '';
+WHERE (R.ITEM_ID IS NULL OR TRIM(R.ITEM_ID) = '')
+  AND REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}';
+
+
+-- 1.2 Insert valid item records
 
 INSERT INTO SILVER_3.ITEM_MASTER_CLEAN (
     ITEM_ID, ITEM_PARENT, ITEM_LEVEL, DEPT_ID,
@@ -91,7 +118,7 @@ SELECT
 FROM BRONZE_3.ITEM_MASTER_RAW R
 WHERE R.ITEM_ID IS NOT NULL
   AND TRIM(R.ITEM_ID) <> ''
-  AND REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') IS NOT NULL
+  AND REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY
         TRIM(R.ITEM_ID),
@@ -103,8 +130,10 @@ QUALIFY ROW_NUMBER() OVER (
 -- ============================================================
 -- 2. STORE MASTER
 -- Preserve one store per snapshot date.
--- This is important for detecting SCD2 changes.
+-- Include September baseline during October 1 processing.
 -- ============================================================
+
+-- 2.1 Quarantine missing store IDs
 
 INSERT INTO SILVER_3.QUARANTINE_RECORDS (
     DATASET_NAME, SOURCE_FILE, SOURCE_ROW_NUMBER,
@@ -117,7 +146,17 @@ SELECT
     'Missing store ID',
     OBJECT_CONSTRUCT_KEEP_NULL(R.*)
 FROM BRONZE_3.STORE_MASTER_RAW R
-WHERE R.STORE_ID IS NULL;
+WHERE R.STORE_ID IS NULL
+  AND (
+      REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+      OR (
+          '{{RUN_DATE}}' = '20261001'
+          AND R.SOURCE_FILE = 'store_master_20260924.csv'
+      )
+  );
+
+
+-- 2.2 Insert valid store records
 
 INSERT INTO SILVER_3.STORE_MASTER_CLEAN (
     STORE_ID, STORE_NAME, STORE_NAME10, STORE_TYPE,
@@ -152,7 +191,13 @@ SELECT
     R.INGESTED_AT
 FROM BRONZE_3.STORE_MASTER_RAW R
 WHERE R.STORE_ID IS NOT NULL
-  AND REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') IS NOT NULL
+  AND (
+      REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
+      OR (
+          '{{RUN_DATE}}' = '20261001'
+          AND R.SOURCE_FILE = 'store_master_20260924.csv'
+      )
+  )
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY
         R.STORE_ID,
@@ -167,7 +212,7 @@ QUALIFY ROW_NUMBER() OVER (
 -- Preserve valid negative RETURN quantities.
 -- ============================================================
 
--- 3.1 Invalid POS records
+-- 3.1 Quarantine invalid POS records
 
 INSERT INTO SILVER_3.QUARANTINE_RECORDS (
     DATASET_NAME, SOURCE_FILE, SOURCE_ROW_NUMBER,
@@ -196,21 +241,24 @@ LEFT JOIN (
     FROM SILVER_3.ITEM_MASTER_CLEAN
 ) I
     ON TRIM(P.ITEM_ID) = I.ITEM_ID
-WHERE P.ITEM_ID IS NULL
-   OR TRIM(P.ITEM_ID) = ''
-   OR P.QUANTITY IS NULL
-   OR (
-       UPPER(TRIM(P.TRANSACTION_TYPE)) = 'SALE'
-       AND P.QUANTITY < 0
+WHERE (
+       P.ITEM_ID IS NULL
+       OR TRIM(P.ITEM_ID) = ''
+       OR P.QUANTITY IS NULL
+       OR (
+           UPPER(TRIM(P.TRANSACTION_TYPE)) = 'SALE'
+           AND P.QUANTITY < 0
+       )
+       OR (
+           P.ITEM_ID IS NOT NULL
+           AND TRIM(P.ITEM_ID) <> ''
+           AND I.ITEM_ID IS NULL
+       )
    )
-   OR (
-       P.ITEM_ID IS NOT NULL
-       AND TRIM(P.ITEM_ID) <> ''
-       AND I.ITEM_ID IS NULL
-   );
+   AND REGEXP_SUBSTR(P.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}';
 
 
--- 3.2 Duplicate POS transaction lines
+-- 3.2 Quarantine duplicate POS transaction lines
 
 INSERT INTO SILVER_3.QUARANTINE_RECORDS (
     DATASET_NAME, SOURCE_FILE, SOURCE_ROW_NUMBER,
@@ -235,6 +283,7 @@ WHERE D.ITEM_ID IS NOT NULL
       UPPER(TRIM(D.TRANSACTION_TYPE)) = 'SALE'
       AND D.QUANTITY < 0
   )
+  AND REGEXP_SUBSTR(D.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY
         D.LOCATION_ID,
@@ -247,7 +296,7 @@ QUALIFY ROW_NUMBER() OVER (
 ) > 1;
 
 
--- 3.3 Valid POS records
+-- 3.3 Insert valid POS records
 
 INSERT INTO SILVER_3.POS_SALES_CLEAN (
     LOCATION_ID, WORKSTATION_ID, TRANSACTION_SEQUENCE,
@@ -294,6 +343,7 @@ WHERE P.ITEM_ID IS NOT NULL
       UPPER(TRIM(P.TRANSACTION_TYPE)) = 'SALE'
       AND P.QUANTITY < 0
   )
+  AND REGEXP_SUBSTR(P.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY
         P.LOCATION_ID,
@@ -311,6 +361,8 @@ QUALIFY ROW_NUMBER() OVER (
 -- Quarantine invalid rows and missing item references.
 -- Preserve negative stock values.
 -- ============================================================
+
+-- 4.1 Quarantine invalid inventory records
 
 INSERT INTO SILVER_3.QUARANTINE_RECORDS (
     DATASET_NAME, SOURCE_FILE, SOURCE_ROW_NUMBER,
@@ -340,17 +392,22 @@ LEFT JOIN (
     FROM SILVER_3.ITEM_MASTER_CLEAN
 ) I
     ON TRIM(R.ITEM_ID) = I.ITEM_ID
-WHERE R.ITEM_ID IS NULL
-   OR TRIM(R.ITEM_ID) = ''
-   OR R.LOCATION_ID IS NULL
-   OR R.SNAPSHOT_DATE IS NULL
-   OR R.STOCK_ON_HAND IS NULL
-   OR (
-       R.ITEM_ID IS NOT NULL
-       AND TRIM(R.ITEM_ID) <> ''
-       AND I.ITEM_ID IS NULL
-   );
+WHERE (
+       R.ITEM_ID IS NULL
+       OR TRIM(R.ITEM_ID) = ''
+       OR R.LOCATION_ID IS NULL
+       OR R.SNAPSHOT_DATE IS NULL
+       OR R.STOCK_ON_HAND IS NULL
+       OR (
+           R.ITEM_ID IS NOT NULL
+           AND TRIM(R.ITEM_ID) <> ''
+           AND I.ITEM_ID IS NULL
+       )
+   )
+   AND REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}';
 
+
+-- 4.2 Insert valid inventory records
 
 INSERT INTO SILVER_3.INVENTORY_SNAPSHOT_CLEAN (
     ITEM_ID, LOCATION_ID, LOCATION_TYPE,
@@ -377,6 +434,7 @@ WHERE R.ITEM_ID IS NOT NULL
   AND R.LOCATION_ID IS NOT NULL
   AND R.SNAPSHOT_DATE IS NOT NULL
   AND R.STOCK_ON_HAND IS NOT NULL
+  AND REGEXP_SUBSTR(R.SOURCE_FILE, '[0-9]{8}') = '{{RUN_DATE}}'
 QUALIFY ROW_NUMBER() OVER (
     PARTITION BY
         TRIM(R.ITEM_ID),
@@ -388,9 +446,11 @@ QUALIFY ROW_NUMBER() OVER (
 
 -- ============================================================
 -- 5. STORE REGION MAPPING
+-- Shared mapping file; reprocess on every run.
 -- Standardize region and district names.
--- Keep one valid mapping per store.
 -- ============================================================
+
+-- 5.1 Quarantine invalid region mappings
 
 INSERT INTO SILVER_3.QUARANTINE_RECORDS (
     DATASET_NAME, SOURCE_FILE, SOURCE_ROW_NUMBER,
@@ -413,14 +473,19 @@ SELECT
     END,
     OBJECT_CONSTRUCT_KEEP_NULL(M.*)
 FROM BRONZE_3.STORE_REGION_MAPPING_RAW M
-WHERE M.STORE_ID IS NULL
-   OR M.STORE_CODE IS NULL
-   OR TRIM(M.STORE_CODE) = ''
-   OR M.REGION_NAME IS NULL
-   OR TRIM(M.REGION_NAME) = ''
-   OR M.DISTRICT_NAME IS NULL
-   OR TRIM(M.DISTRICT_NAME) = '';
+WHERE M.SOURCE_FILE = 'store_region_mapping.csv'
+  AND (
+      M.STORE_ID IS NULL
+      OR M.STORE_CODE IS NULL
+      OR TRIM(M.STORE_CODE) = ''
+      OR M.REGION_NAME IS NULL
+      OR TRIM(M.REGION_NAME) = ''
+      OR M.DISTRICT_NAME IS NULL
+      OR TRIM(M.DISTRICT_NAME) = ''
+  );
 
+
+-- 5.2 Insert valid region mappings
 
 INSERT INTO SILVER_3.STORE_REGION_MAPPING_CLEAN (
     STORE_ID, STORE_CODE, REGION_NAME, DISTRICT_NAME,
@@ -435,7 +500,8 @@ SELECT
     M.SOURCE_ROW_NUMBER,
     M.INGESTED_AT
 FROM BRONZE_3.STORE_REGION_MAPPING_RAW M
-WHERE M.STORE_ID IS NOT NULL
+WHERE M.SOURCE_FILE = 'store_region_mapping.csv'
+  AND M.STORE_ID IS NOT NULL
   AND M.STORE_CODE IS NOT NULL
   AND TRIM(M.STORE_CODE) <> ''
   AND M.REGION_NAME IS NOT NULL
